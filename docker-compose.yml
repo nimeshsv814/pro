@@ -1,0 +1,123 @@
+version: "3.9"
+
+services:
+  mongodb:
+    image: mongo:7
+    container_name: ai-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - ai-platform
+
+  ingestion-service:
+    build:
+      context: ./services/ingestion-service
+      dockerfile: Dockerfile
+    container_name: ingestion-service
+    restart: unless-stopped
+    environment:
+      - PORT=8080
+      - MONGO_URI=mongodb://mongodb:27017
+      - MONGO_DB=devops_ai
+    depends_on:
+      - mongodb
+    ports:
+      - "8081:8080"
+    networks:
+      - ai-platform
+
+  prediction-service:
+    build:
+      context: ./services/prediction-service
+      dockerfile: Dockerfile
+    container_name: prediction-service
+    restart: unless-stopped
+    environment:
+      - PORT=8080
+      - MONGO_URI=mongodb://mongodb:27017
+      - MONGO_DB=devops_ai
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT:-https://example-openai.openai.azure.com}
+      - AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT:-gpt-4o-mini}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY:-dummy-key}
+    depends_on:
+      - mongodb
+    ports:
+      - "8082:8080"
+    networks:
+      - ai-platform
+
+  automation-service:
+    build:
+      context: ./services/automation-service
+      dockerfile: Dockerfile
+    container_name: automation-service
+    restart: unless-stopped
+    environment:
+      - PORT=8080
+    ports:
+      - "8083:8080"
+    networks:
+      - ai-platform
+
+  incident-service:
+    build:
+      context: ./services/incident-service
+      dockerfile: Dockerfile
+    container_name: incident-service
+    restart: unless-stopped
+    environment:
+      - PORT=8080
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT:-https://example-openai.openai.azure.com}
+      - AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT:-gpt-4o-mini}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY:-dummy-key}
+    ports:
+      - "8084:8080"
+    networks:
+      - ai-platform
+
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
+      - PORT=8080
+      - JWT_SECRET=${JWT_SECRET:-change-me}
+      - INGESTION_URL=http://ingestion-service:8080
+      - PREDICTION_URL=http://prediction-service:8080
+      - AUTOMATION_URL=http://automation-service:8080
+      - INCIDENT_URL=http://incident-service:8080
+    depends_on:
+      - ingestion-service
+      - prediction-service
+      - automation-service
+      - incident-service
+    ports:
+      - "8080:8080"
+    networks:
+      - ai-platform
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    restart: unless-stopped
+    depends_on:
+      - api-gateway
+    ports:
+      - "3000:80"
+    networks:
+      - ai-platform
+
+networks:
+  ai-platform:
+    driver: bridge
+
+volumes:
+  mongo_data:

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.namespace }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: platform-secrets
+  namespace: {{ .Values.namespace }}
+type: Opaque
+stringData:
+  JWT_SECRET: {{ .Values.secrets.jwtSecret | quote }}
+  AZURE_OPENAI_API_KEY: {{ .Values.secrets.azureOpenAIKey | quote }}
+  AZURE_OPENAI_ENDPOINT: "https://example-openai.openai.azure.com"
+  AZURE_OPENAI_DEPLOYMENT: "gpt-4o-mini"

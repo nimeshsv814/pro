@@ -1,0 +1,53 @@
+trigger:
+- main
+
+variables:
+  ACR_NAME: aiDevopsAcr
+  AKS_CLUSTER: ai-devops-aks
+  AKS_RG: ai-devops-rg
+
+stages:
+- stage: Build
+  jobs:
+  - job: BuildAndPush
+    pool: { vmImage: ubuntu-latest }
+    steps:
+    - task: Docker@2
+      inputs: { command: buildAndPush, repository: api-gateway, dockerfile: services/api-gateway/Dockerfile, containerRegistry: acr-service-conn }
+    - task: Docker@2
+      inputs: { command: buildAndPush, repository: ingestion-service, dockerfile: services/ingestion-service/Dockerfile, containerRegistry: acr-service-conn }
+    - task: Docker@2
+      inputs: { command: buildAndPush, repository: prediction-service, dockerfile: services/prediction-service/Dockerfile, containerRegistry: acr-service-conn }
+    - task: Docker@2
+      inputs: { command: buildAndPush, repository: automation-service, dockerfile: services/automation-service/Dockerfile, containerRegistry: acr-service-conn }
+    - task: Docker@2
+      inputs: { command: buildAndPush, repository: incident-service, dockerfile: services/incident-service/Dockerfile, containerRegistry: acr-service-conn }
+    - task: Docker@2
+      inputs: { command: buildAndPush, repository: frontend, dockerfile: frontend/Dockerfile, containerRegistry: acr-service-conn }
+
+- stage: AIGate
+  dependsOn: Build
+  jobs:
+  - job: RiskAssessment
+    pool: { vmImage: ubuntu-latest }
+    steps:
+    - script: |
+        npm ci
+        node scripts/predeploy-risk-gate.js
+      displayName: "Run AI Deployment Risk Gate"
+
+- stage: Deploy
+  dependsOn: AIGate
+  condition: succeeded('AIGate')
+  jobs:
+  - job: DeployToAKS
+    pool: { vmImage: ubuntu-latest }
+    steps:
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: aks-service-conn
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          az aks get-credentials -g $(AKS_RG) -n $(AKS_CLUSTER) --overwrite-existing
+          helm upgrade --install ai-devops helm/ai-devops-platform -n ai-devops --create-namespace

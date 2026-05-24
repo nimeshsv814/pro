@@ -1,0 +1,27 @@
+namespace: ai-devops
+imagePullSecrets: []
+
+global:
+  registry: myacr.azurecr.io
+  tag: latest
+
+mongodb:
+  image: mongo:7
+  storage: 20Gi
+
+services:
+  apiGateway: { replicaCount: 2, port: 8080 }
+  ingestion: { replicaCount: 2, port: 8080 }
+  prediction: { replicaCount: 2, port: 8080 }
+  automation: { replicaCount: 2, port: 8080 }
+  incident: { replicaCount: 2, port: 8080 }
+  frontend: { replicaCount: 2, port: 80 }
+
+ingress:
+  enabled: true
+  className: azure-application-gateway
+  host: ai-devops.example.com
+
+secrets:
+  jwtSecret: change-me
+  azureOpenAIKey: replace-me

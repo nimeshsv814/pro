@@ -1,0 +1,10 @@
+{
+  "title": "AI Deployment Intelligence",
+  "panels": [
+    { "type": "stat", "title": "Deployment Risk Score", "targets": [{ "expr": "avg(gateway_requests_total)" }] },
+    { "type": "timeseries", "title": "CPU Utilization", "targets": [{ "expr": "rate(container_cpu_usage_seconds_total[5m])" }] },
+    { "type": "timeseries", "title": "Pod Restarts", "targets": [{ "expr": "increase(kube_pod_container_status_restarts_total[1h])" }] }
+  ],
+  "schemaVersion": 39,
+  "version": 1
+}

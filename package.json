@@ -1,0 +1,10 @@
+{
+  "name": "ai-devops-platform",
+  "private": true,
+  "scripts": {
+    "risk-gate": "node scripts/predeploy-risk-gate.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.2"
+  }
+}

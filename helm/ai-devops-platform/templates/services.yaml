@@ -1,0 +1,9 @@
+{{ include "svc.deployment" (dict "name" "api-gateway" "replicas" .Values.services.apiGateway.replicaCount "port" .Values.services.apiGateway.port "image" (printf "%s/api-gateway" .Values.global.registry) "tag" .Values.global.tag) }}
+---
+{{ include "svc.deployment" (dict "name" "ingestion-service" "replicas" .Values.services.ingestion.replicaCount "port" .Values.services.ingestion.port "image" (printf "%s/ingestion-service" .Values.global.registry) "tag" .Values.global.tag) }}
+---
+{{ include "svc.deployment" (dict "name" "prediction-service" "replicas" .Values.services.prediction.replicaCount "port" .Values.services.prediction.port "image" (printf "%s/prediction-service" .Values.global.registry) "tag" .Values.global.tag) }}
+---
+{{ include "svc.deployment" (dict "name" "automation-service" "replicas" .Values.services.automation.replicaCount "port" .Values.services.automation.port "image" (printf "%s/automation-service" .Values.global.registry) "tag" .Values.global.tag) }}
+---
+{{ include "svc.deployment" (dict "name" "incident-service" "replicas" .Values.services.incident.replicaCount "port" .Values.services.incident.port "image" (printf "%s/incident-service" .Values.global.registry) "tag" .Values.global.tag) }}
